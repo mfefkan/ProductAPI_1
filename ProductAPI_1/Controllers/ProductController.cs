@@ -71,8 +71,7 @@ namespace OrderAPI.Controllers
                 CustomerGSM = newOrderReq.CustomerGSM,
                 Products = products
             };
-
-
+           
             _db.Orders.Add(newOrder);
 
             return newOrder.ID;

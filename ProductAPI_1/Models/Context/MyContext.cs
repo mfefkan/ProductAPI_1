@@ -1,6 +1,7 @@
 ﻿using Bogus.DataSets;
 using Microsoft.EntityFrameworkCore;
 using OrderAPI.Models.Entities;
+
 namespace OrderAPI.Models.Context
 {
     public class MyContext:DbContext
@@ -16,7 +17,6 @@ namespace OrderAPI.Models.Context
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Product>().HasData(SeedProducts());
-
 
         }
         public List<Product> SeedProducts()
