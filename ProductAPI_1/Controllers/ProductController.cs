@@ -60,7 +60,6 @@ namespace OrderAPI.Controllers
                 Description = x.Description,
                 UnitPrice = x.UnitPrice,
                 Unit = x.Unit,
-                ID = x.ID,
                 Category = x.Category
             }).ToList();
 
@@ -71,8 +70,20 @@ namespace OrderAPI.Controllers
                 CustomerGSM = newOrderReq.CustomerGSM,
                 Products = products
             };
-           
+
+            foreach (ProductDTO item in newOrderReq.Products)
+            {
+                Product productFromDB = _db.Products.Find(item.ID);
+
+                if (productFromDB != null)
+                {
+                    productFromDB.Unit -= item.Unit;
+                    _db.Products.Update(productFromDB);
+                }
+            }
+
             _db.Orders.Add(newOrder);
+            _db.SaveChanges();
 
             return newOrder.ID;
         }
