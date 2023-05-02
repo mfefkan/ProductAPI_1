@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OrderAPI.Models.Context;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContextPool<MyContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("MyConnection")).UseLazyLoadingProxies());
+
+builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
