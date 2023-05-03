@@ -7,6 +7,8 @@ using OrderAPI.APIResponseModels;
 using OrderAPI.DTO;
 using OrderAPI.Models.Context;
 using OrderAPI.Models.Entities;
+using RabbitMQ.Client;
+using System.Text;
 
 namespace OrderAPI.Controllers
 {
@@ -26,7 +28,7 @@ namespace OrderAPI.Controllers
         [HttpGet]
         public List<ProductDTO> GetProducts(string? category = null)
         {
-            // Check if products exist in memory cache and return them if available
+            
             var cachedProducts = _memoryCache.Get<List<ProductDTO>>("products");
             if (cachedProducts != null)
             {
@@ -40,8 +42,9 @@ namespace OrderAPI.Controllers
                 }
             }
 
-            // If products are not in memory cache, retrieve them from the database
+            
             var products = new List<Product>();
+
             if (string.IsNullOrEmpty(category))
             {
                 products = _db.Products.ToList();
@@ -51,7 +54,7 @@ namespace OrderAPI.Controllers
                 products = _db.Products.Where(p => p.Category == category).ToList();
             }
 
-            // Map the products to ProductDTOs
+            
             var productDTOs = products.Select(p => new ProductDTO
             {
                 Category = p.Category,
@@ -61,7 +64,7 @@ namespace OrderAPI.Controllers
                 ID = p.ID
             }).ToList();
 
-            // Store the products in memory cache
+            
             _memoryCache.Set("products", productDTOs, new MemoryCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
@@ -100,7 +103,7 @@ namespace OrderAPI.Controllers
 
 
         [HttpPost]
-        public int CreateOrderR(CreateOrderRequest newOrderReq)
+        public int CreateOrder(CreateOrderRequest newOrderReq)
         {
 
             #region İlkHali
@@ -128,8 +131,12 @@ namespace OrderAPI.Controllers
 
                 newOrder.TotalAmonut += item.UnitPrice;
 
-                if (productFromDB != null && productFromDB.Unit < 1)
+                if (productFromDB != null && productFromDB.Unit >= 1)
                 {
+                    if (productFromDB.Unit < item.Unit)
+                    {
+                        throw new Exception($"{item.Description} unit is not enough for your requested amount");
+                    }
                     productFromDB.Unit -= item.Unit;
                     _db.Products.Update(productFromDB);
                 }
@@ -142,6 +149,26 @@ namespace OrderAPI.Controllers
 
             _db.Orders.Add(newOrder);
             _db.SaveChanges();
+
+            ConnectionFactory factory = new ConnectionFactory() { HostName = "localhost" };
+            using (IConnection connection = factory.CreateConnection())
+            using (IModel channel = connection.CreateModel())
+            {
+                channel.QueueDeclare(queue: "SendMail",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+
+                string message = $"Dear {newOrder.CustomerName}, your order has been created successfully.";
+                string email = newOrderReq.CustomerEmail;
+                byte[] body = Encoding.UTF8.GetBytes($"{message} Email adresi: {email}");
+
+                channel.BasicPublish(exchange: "",
+                                     routingKey: "SendMail",
+                                     basicProperties: null,
+                                     body: body);
+            }
 
             return newOrder.ID;
             #endregion
