@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using OrderAPI.APIRequest;
-using OrderAPI.APIResponseModels;
 using OrderAPI.DTO;
 using OrderAPI.Models.Context;
 using OrderAPI.Models.Entities;
@@ -73,40 +72,12 @@ namespace OrderAPI.Controllers
             return productDTOs;
         }
 
-        #region İlk Hali
-        //if (category == null)
-        //{
-        //    List<ProductDTO> productDTOs = _db.Products.Select(x => new ProductDTO
-        //    {
-        //        Category = x.Category,
-        //        Description = x.Description,
-        //        UnitPrice = x.UnitPrice,
-        //        Unit = x.Unit,
-        //        ID = x.ID
-        //    }).ToList();
-        //    return productDTOs;
-        //}
-        //else
-        //{
-        //    List<ProductDTO> productDTOs1 = _db.Products.Where(x => x.Category == category).Select(x => new ProductDTO
-        //    {
-        //        Category = category,
-        //        Description = x.Description,
-        //        UnitPrice = x.UnitPrice,
-        //        Unit = x.Unit,
-        //        ID = x.ID
-        //    }).ToList();
-        //    return productDTOs1;
-        //}
-        #endregion
-
 
 
         [HttpPost]
         public int CreateOrder(CreateOrderRequest newOrderReq)
         {
 
-            #region İlkHali
             List<Product> products = new List<Product>();
 
             products = newOrderReq.Products.Select(x => new Product
@@ -171,7 +142,6 @@ namespace OrderAPI.Controllers
             }
 
             return newOrder.ID;
-            #endregion
         }
 
 
